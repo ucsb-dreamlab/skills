@@ -1,9 +1,0 @@
-{
-  "name": "ucsb-dreamlab",
-  "version": "1.0.0",
-  "description": "UCSB DREAM Lab utilities and features for development environments, including workspace tools and AI gateway integration",
-  "author": {
-    "name": "UCSB DREAM Lab"
-  },
-  "keywords": ["dreamlab", "ucsb", "workspace", "litellm", "research"]
-}
