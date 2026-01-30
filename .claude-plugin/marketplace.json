@@ -1,0 +1,13 @@
+{
+  "name": "ucsb-dreamlab-skills",
+  "displayName": "UCSB DREAM Lab",
+  "description": "UCSB DREAM Lab utilities and features for development environments",
+  "version": "1.0.0",
+  "author": {
+    "name": "UCSB DREAM Lab"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ucsb-dreamlab/skills.git"
+  }
+}
