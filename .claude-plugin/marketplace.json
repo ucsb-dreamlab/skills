@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "UCSB DREAM Lab agent skills",
-    "version": "1.0.0"
+    "version": "1.1.0"
   },
   "plugins": [
     {
@@ -15,6 +15,15 @@
       "strict": false,
       "skills": [
         "./skills/dreamlab-coder-workspace"
+      ]
+    },
+    {
+      "name": "research-data-management",
+      "description": "UCSB DREAM Lab research data management skills",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/research-data-management"
       ]
     }
   ]
