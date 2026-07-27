@@ -3,27 +3,26 @@ name: dreamlab-coder-workspace
 description: Use features of the DREAM Lab Coder Workspace Environment
 ---
 
-You are running in a virtual machine using ubuntu 24.04.
-- you have `sudo` access
-- available commands: `uv`, `R`, `Rscript`, `gh`, `docker`, `jq`
-- the user does not have access to ports running on localhost (see TLS termination)
+You are running in an Ubuntu-based virtual machine with sudo access. 
+Coder workspace documentation is at https://dreamlab.ucsb.edu
 
-## TLS Termination for HTTP ports
+Check if you are running in coder workspace:
+
+```sh
+if [ "$CODER" == "true" ]; then echo "this is a coder workspace"; else echo "this IS NOT a coder workspace"; fi
+```
+
+## Reverse Proxy & TLS Termination for Locahost Ports
+
+The user doesn't have direct access to http ports on localhost (e.g, for local
+web development), however there is a reverse proxy with TLS termination
+forwarding traffic to local ports:
 
 If you start an http server on `$SERVER_PORT`, the server can be accessed at:
 `https://${SERVER_PORT}--workspace--$(hostname)--${CODER_WORKSPACE_OWNER_NAME}.coder.dreamlab.ucsb.edu`
 
-## LiteLLM AI Gateway
+The user may need to configure the proxy to accept public traffic.
 
-API endpoint: http://litellm.dreamlab.ucsb.edu:4000
+## Additional Docs
 
-To access to the admin interface (web ui):
-
-```sh
-# forward workspace's :4000 to gateways's :4000
-nohup socat TCP-LISTEN:4000,fork,reuseaddr TCP:litellm.dreamlab.ucsb.edu:4000 &
-
-# the admin interface is now accessible at
-echo "The LiteLLM Admin interface is availble at:"
-echo "https://4000--workspace--$(hostname)--${CODER_WORKSPACE_OWNER_NAME}.coder.dreamlab.ucsb.edu"
-```
+- To enable browser support in opencode (chrome devtools mcp), read docs/browser-mcp.md
