@@ -1,0 +1,20 @@
+{
+  "url": "http://127.0.0.1:8080",
+  "states": [
+    { "name": "default", "steps": [] },
+    {
+      "name": "station-selected",
+      "steps": [
+        { "select": "#station", "value": "9411340" },
+        { "click": "#units_toggle" },
+        { "wait": ".value-box" }
+      ]
+    },
+    {
+      "name": "about-tab",
+      "steps": [
+        { "click": "a[data-value='About']" }
+      ]
+    }
+  ]
+}

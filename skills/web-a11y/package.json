@@ -1,0 +1,10 @@
+{
+  "name": "web-a11y",
+  "private": true,
+  "type": "module",
+  "description": "axe-core accessibility checks for Quarto sites and Shiny apps.",
+  "dependencies": {
+    "axe-core": "^4.12.1",
+    "puppeteer-core": "^25.4.0"
+  }
+}

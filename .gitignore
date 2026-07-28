@@ -1,2 +1,8 @@
 .claude/
 .vscode
+
+# Skill dependencies — installed per machine with `npm install --prefix <skill>`
+node_modules/
+
+# axe-core report output
+a11y-report/

@@ -25,6 +25,15 @@
       "skills": [
         "./skills/research-data-management"
       ]
+    },
+    {
+      "name": "web-a11y",
+      "description": "axe-core accessibility checks (WCAG 2.1 A/AA) for Quarto sites and Shiny apps",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/web-a11y"
+      ]
     }
   ]
 }
