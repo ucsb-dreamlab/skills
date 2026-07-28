@@ -8,24 +8,35 @@ description: Run axe-core accessibility checks (WCAG 2.1 A/AA) against a Quarto 
 Runs axe-core in headless Chrome, scoped to WCAG 2.1 level A and AA. Serious and
 critical violations fail the run; moderate and minor are reported as warnings.
 
-## Setup (once per machine)
+## Setup (once per install)
+
+The runners need their dependencies installed **inside this skill's own
+directory** — the one containing this SKILL.md. Don't guess that path: when
+installed as a plugin it is version-hashed and changes on every update. Use the
+real path of this file, which you already know when this skill loads:
 
 ```bash
-npm install --prefix ~/.agents/skills/web-a11y
+SKILL_DIR=<directory containing this SKILL.md>
+npm install --prefix "$SKILL_DIR"
 ```
 
-Requires Node 18+ and a system Chrome or Chromium. The script checks
+Skip it if `$SKILL_DIR/node_modules` already exists. Re-run it after a plugin
+update, which lands in a fresh directory.
+
+Requires Node 18+ and a system Chrome or Chromium. The runner checks
 `$CHROME_PATH`, `/usr/bin/google-chrome`, `/usr/bin/chromium`,
 `/usr/bin/chromium-browser`, and the macOS Chrome bundle.
 
 ## Which runner
 
+Run these from the project being audited, with `$SKILL_DIR` as above.
+
 | Target | Command |
 |---|---|
-| Rendered Quarto site | `node scripts/quarto.mjs` |
-| Shiny app you want launched | `node scripts/shiny.mjs --cmd "shiny run --port 8080 app.py"` |
-| Shiny app already running | `node scripts/shiny.mjs --url http://127.0.0.1:8080` |
-| shinylive / WASM export | `node scripts/shiny.mjs --static ./site` |
+| Rendered Quarto site | `node "$SKILL_DIR/scripts/quarto.mjs"` |
+| Shiny app you want launched | `node "$SKILL_DIR/scripts/shiny.mjs" --cmd "shiny run --port 8080 app.py"` |
+| Shiny app already running | `node "$SKILL_DIR/scripts/shiny.mjs" --url http://127.0.0.1:8080` |
+| shinylive / WASM export | `node "$SKILL_DIR/scripts/shiny.mjs" --static ./site` |
 
 A Quarto page that *embeds* a shinylive app still uses `quarto.mjs` — it detects
 the app, waits for it to render, and audits inside its frame.
@@ -39,7 +50,7 @@ selector when the console summary isn't enough.
 
 ```bash
 quarto render
-node ~/.agents/skills/web-a11y/scripts/quarto.mjs
+node "$SKILL_DIR/scripts/quarto.mjs"
 ```
 
 Output directory is auto-detected (`_site`, `_book`, then `docs`); every `.html`

@@ -17,20 +17,26 @@ the next `quarto render` overwrites it.
 
 Quarto renders `collapse="true"` callout headers as a `<div>` with
 `aria-expanded` but no role that permits it, a critical `aria-allowed-attr`
-violation. Patch it after render by adding to `_quarto.yml`:
+violation. The fix is a post-render patch.
+
+**Copy `scripts/fix-callout-a11y.mjs` into the project's own `scripts/`
+directory** and reference it relatively:
 
 ```yaml
 project:
   post-render:
-    - node ~/.agents/skills/web-a11y/scripts/fix-callout-a11y.mjs
+    - node scripts/fix-callout-a11y.mjs
 ```
+
+Do this rather than pointing `_quarto.yml` at the skill's copy. The skill's path
+is version-hashed and changes when the plugin updates, and collaborators who
+render the project won't have the skill installed at all — either way the
+post-render step breaks for everyone but you.
 
 The script patches `QUARTO_PROJECT_OUTPUT_FILES` when Quarto sets it, and
 otherwise walks the output directory (`_site`, `_book`, or `docs`, or a directory
-passed as its first argument).
-
-Copy the script into the project's own `scripts/` directory instead if the
-project is shared and collaborators won't have the skill installed.
+passed as its first argument). It is idempotent — it only matches headers that
+don't already carry a `role`, so re-rendering won't double-patch.
 
 ## Embedded shinylive apps
 
