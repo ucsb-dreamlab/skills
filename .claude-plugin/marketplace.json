@@ -34,6 +34,15 @@
       "skills": [
         "./skills/web-a11y"
       ]
+    },
+    {
+      "name": "rclone-google-drive",
+      "description": "Set up and manage Google Drive access via rclone CLI with installation, configuration verification, and guided OAuth2 authentication",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/rclone-google-drive"
+      ]
     }
   ]
 }
