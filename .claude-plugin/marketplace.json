@@ -46,7 +46,7 @@
     },
     {
       "name": "google_oauth",
-      "description": "Authenticate with Google OAuth 2.0 using ~/.config/dreamlab/google_client.json and uv/Python for arbitrary Google API scopes, saving Application Default Credentials and configuring rclone",
+      "description": "Authenticate with Google OAuth 2.0 in a DREAM Lab Coder remote workspace using ~/.config/dreamlab/google_client.json and uv/Python for arbitrary Google API scopes, saving Application Default Credentials and configuring rclone",
       "source": "./",
       "strict": false,
       "skills": [

@@ -1,17 +1,17 @@
 ---
 name: google_oauth
-description: Authenticate with Google OAuth 2.0 in a remote workspace using ~/.config/dreamlab/google_client.json and uv/Python for arbitrary scopes (Drive, Sheets, Docs, Calendar, Gmail, etc.). Saves unified Application Default Credentials to ~/.config/gcloud/application_default_credentials.json and configures rclone.
+description: Authenticate with Google OAuth 2.0 in a DREAM Lab Coder remote workspace using ~/.config/dreamlab/google_client.json and uv/Python for arbitrary scopes (Drive, Sheets, Docs, Calendar, Gmail, etc.). Saves unified Application Default Credentials to ~/.config/gcloud/application_default_credentials.json and configures rclone.
 ---
 
-# Google OAuth 2.0 Authentication
+# Google OAuth 2.0 Authentication (DREAM Lab Coder Remote Workspace)
 
-Use this skill to authenticate with Google services (Drive, Sheets, Docs, Calendar, Gmail, etc.) with arbitrary OAuth scopes in a remote workspace where `uv` (Python) is available and `gcloud` CLI is not required.
+Use this skill in a **DREAM Lab Coder remote workspace** to authenticate with Google services (Drive, Sheets, Docs, Calendar, Gmail, etc.) with arbitrary OAuth scopes using the pre-provisioned workspace client secret (`~/.config/dreamlab/google_client.json`) and `uv` (Python), without requiring `gcloud` CLI or a local browser on the VM.
 
-## Standard File Locations
+## Standard File Locations (DREAM Lab Coder Remote Workspace)
 
 1. **OAuth Client Secret (Input):**
    `~/.config/dreamlab/google_client.json`
-   *(Google Cloud OAuth 2.0 "Desktop / Installed App" JSON containing `client_id` and `client_secret`.)*
+   *(Pre-provisioned in DREAM Lab Coder remote workspaces; Google Cloud OAuth 2.0 "Desktop / Installed App" JSON containing `client_id` and `client_secret`.)*
 
 2. **Saved User Credential (Output):**
    `~/.config/gcloud/application_default_credentials.json` (`0600` permissions)
