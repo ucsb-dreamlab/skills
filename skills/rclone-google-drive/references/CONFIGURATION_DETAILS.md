@@ -175,12 +175,12 @@ export RCLONE_CONFIG_GDRIVE_TOKEN='{"access_token":"..."}'
 ### Token Expired or Missing `drive` Scope
 **Symptom**: `401 Unauthorized` or `403 Insufficient Permission`
 
-**Fix**: Re-authenticate and update `rclone` via the **`google_oauth`** skill:
+**Fix**: Re-authenticate and update `rclone` via the **`google-oauth`** skill:
 ```bash
-uv run skills/google_oauth/scripts/google_oauth.py status
-uv run skills/google_oauth/scripts/google_oauth.py url --scopes drive
-uv run skills/google_oauth/scripts/google_oauth.py exchange '<REDIRECT_URL>'
-uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote gdrive
+uv run skills/google-oauth/scripts/google_oauth.py status
+uv run skills/google-oauth/scripts/google_oauth.py url --scopes drive
+uv run skills/google-oauth/scripts/google_oauth.py exchange '<REDIRECT_URL>'
+uv run skills/google-oauth/scripts/google_oauth.py configure-rclone --remote gdrive
 ```
 
 ### Shared Drive Access
@@ -188,8 +188,8 @@ uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote gdr
 
 **Fix**: Bind the remote (or a dedicated remote) to the Shared Drive using `--shared-drive`:
 ```bash
-uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --list-shared-drives
-uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote gdrive --shared-drive "Shared Drive Name"
+uv run skills/google-oauth/scripts/google_oauth.py configure-rclone --list-shared-drives
+uv run skills/google-oauth/scripts/google_oauth.py configure-rclone --remote gdrive --shared-drive "Shared Drive Name"
 ```
 This sets `team_drive = <DRIVE_ID>` in `~/.config/rclone/rclone.conf`.
 
@@ -198,8 +198,8 @@ This sets `team_drive = <DRIVE_ID>` in `~/.config/rclone/rclone.conf`.
 Configure multiple Google Drive remotes (e.g., My Drive plus one or more Shared Drives) from the same credential:
 
 ```bash
-uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote mydrive
-uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote carpentry --shared-drive "Carpentry"
+uv run skills/google-oauth/scripts/google_oauth.py configure-rclone --remote mydrive
+uv run skills/google-oauth/scripts/google_oauth.py configure-rclone --remote carpentry --shared-drive "Carpentry"
 ```
 
 Use them independently:

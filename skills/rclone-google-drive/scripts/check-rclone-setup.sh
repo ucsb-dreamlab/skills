@@ -100,11 +100,11 @@ if [ "$GDRIVE_CONFIGURED" = true ]; then
             rclone about "${FIRST_REMOTE}:" 2>/dev/null || true
         else
             echo -e "${YELLOW}⚠️  Cannot access remote (may need re-authentication or drive scope)${NC}"
-            echo "Use the google_oauth skill to authenticate and update rclone:"
-            echo "  uv run skills/google_oauth/scripts/google_oauth.py status"
-            echo "  uv run skills/google_oauth/scripts/google_oauth.py url --scopes drive"
-            echo "  uv run skills/google_oauth/scripts/google_oauth.py exchange '<REDIRECT_URL>'"
-            echo "  uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote ${FIRST_REMOTE}"
+            echo "Use the google-oauth skill to authenticate and update rclone:"
+            echo "  uv run skills/google-oauth/scripts/google_oauth.py status"
+            echo "  uv run skills/google-oauth/scripts/google_oauth.py url --scopes drive"
+            echo "  uv run skills/google-oauth/scripts/google_oauth.py exchange '<REDIRECT_URL>'"
+            echo "  uv run skills/google-oauth/scripts/google_oauth.py configure-rclone --remote ${FIRST_REMOTE}"
         fi
     fi
 
@@ -123,22 +123,22 @@ if [ "$GDRIVE_CONFIGURED" = true ]; then
 
 else
     echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
-    echo -e "${BLUE}Setting up Google Drive access via google_oauth skill...${NC}"
+    echo -e "${BLUE}Setting up Google Drive access via google-oauth skill...${NC}"
     echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
     echo ""
-    echo "Use the google_oauth skill to authenticate and configure rclone:"
+    echo "Use the google-oauth skill to authenticate and configure rclone:"
     echo ""
     echo "  1. Check existing credentials/scopes:"
-    echo "     uv run skills/google_oauth/scripts/google_oauth.py status"
+    echo "     uv run skills/google-oauth/scripts/google_oauth.py status"
     echo ""
     echo "  2. If 'drive' scope is not yet granted, generate an auth URL and exchange:"
-    echo "     uv run skills/google_oauth/scripts/google_oauth.py url --scopes drive"
-    echo "     uv run skills/google_oauth/scripts/google_oauth.py exchange '<REDIRECT_URL>'"
+    echo "     uv run skills/google-oauth/scripts/google_oauth.py url --scopes drive"
+    echo "     uv run skills/google-oauth/scripts/google_oauth.py exchange '<REDIRECT_URL>'"
     echo ""
     echo "  3. Configure the rclone remote (for My Drive or a Shared Drive):"
-    echo "     uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote gdrive"
+    echo "     uv run skills/google-oauth/scripts/google_oauth.py configure-rclone --remote gdrive"
     echo "     # Or for a Shared Drive:"
-    echo "     uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --list-shared-drives"
-    echo "     uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote gdrive --shared-drive \"<NAME_OR_ID>\""
+    echo "     uv run skills/google-oauth/scripts/google_oauth.py configure-rclone --list-shared-drives"
+    echo "     uv run skills/google-oauth/scripts/google_oauth.py configure-rclone --remote gdrive --shared-drive \"<NAME_OR_ID>\""
     echo ""
 fi

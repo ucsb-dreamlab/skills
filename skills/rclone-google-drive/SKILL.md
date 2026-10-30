@@ -1,12 +1,12 @@
 ---
 name: rclone-google-drive
-description: Access and manage Google Drive (My Drive and Shared Drives) via rclone CLI. Uses the google_oauth skill to authenticate and configure remotes, and provides safe patterns for searching, exporting/importing Google Docs/Sheets/Slides, and transferring files without full-drive scans.
+description: Access and manage Google Drive (My Drive and Shared Drives) via rclone CLI. Uses the google-oauth skill to authenticate and configure remotes, and provides safe patterns for searching, exporting/importing Google Docs/Sheets/Slides, and transferring files without full-drive scans.
 license: MIT
 ---
 
 # Rclone Google Drive Guide
 
-Use this skill to interact with Google Drive (including Shared Drives) via `rclone`. For OAuth2 authentication and creating/updating `rclone` remotes, use the **`google_oauth`** skill.
+Use this skill to interact with Google Drive (including Shared Drives) via `rclone`. For OAuth2 authentication and creating/updating `rclone` remotes, use the **`google-oauth`** skill.
 
 ## ⚠️ Critical Usage Guidelines
 
@@ -38,9 +38,9 @@ rclone backend copyid gdrive: FILE-ID ./ --drive-export-formats pdf  # Specific 
 - ❌ Run recursive `rclone ls gdrive:` on the drive root
 - ❌ Download large folders without checking file count
 
-## Authentication & Remote Setup (via `google_oauth` Skill)
+## Authentication & Remote Setup (via `google-oauth` Skill)
 
-Do **not** use interactive `rclone config` in a remote workspace. Instead, load and follow the **`google_oauth`** skill (`skills/google_oauth/SKILL.md`), which authenticates using `~/.config/dreamlab/google_client.json`, saves unified credentials to `~/.config/gcloud/application_default_credentials.json`, and configures `rclone` non-interactively:
+Do **not** use interactive `rclone config` in a remote workspace. Instead, load and follow the **`google-oauth`** skill (`skills/google-oauth/SKILL.md`), which authenticates using `~/.config/dreamlab/google_client.json`, saves unified credentials to `~/.config/gcloud/application_default_credentials.json`, and configures `rclone` non-interactively:
 
 1. **Ensure `rclone` is installed:**
    ```bash
@@ -48,16 +48,16 @@ Do **not** use interactive `rclone config` in a remote workspace. Instead, load 
    ```
 
 2. **Authenticate with `drive` scope (if not already authenticated):**
-   Follow the `google_oauth` skill (`uv run skills/google_oauth/scripts/google_oauth.py status` to check existing scopes, then `url --scopes drive` and `exchange`).
+   Follow the `google-oauth` skill (`uv run skills/google-oauth/scripts/google_oauth.py status` to check existing scopes, then `url --scopes drive` and `exchange`).
 
 3. **Configure the `rclone` remote from saved credentials:**
    ```bash
    # Personal "My Drive" remote:
-   uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote gdrive
+   uv run skills/google-oauth/scripts/google_oauth.py configure-rclone --remote gdrive
 
    # Or list and bind to a Shared Drive (Team Drive):
-   uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --list-shared-drives
-   uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote gdrive --shared-drive "Carpentry"
+   uv run skills/google-oauth/scripts/google_oauth.py configure-rclone --list-shared-drives
+   uv run skills/google-oauth/scripts/google_oauth.py configure-rclone --remote gdrive --shared-drive "Carpentry"
    ```
 
 4. **Verify Setup:**
@@ -895,13 +895,13 @@ Use `md` whenever using `backend copyid`. The `rclone copy` command accepts eith
 
 ### "401 Unauthorized" or "403 Insufficient Permission" Error
 
-Re-authenticate or add the `drive` scope using the **`google_oauth`** skill:
+Re-authenticate or add the `drive` scope using the **`google-oauth`** skill:
 
 ```bash
-uv run skills/google_oauth/scripts/google_oauth.py status
-uv run skills/google_oauth/scripts/google_oauth.py url --scopes drive
+uv run skills/google-oauth/scripts/google_oauth.py status
+uv run skills/google-oauth/scripts/google_oauth.py url --scopes drive
 # After exchanging the redirect URL:
-uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote gdrive
+uv run skills/google-oauth/scripts/google_oauth.py configure-rclone --remote gdrive
 ```
 
 ### Shared Drive Not Showing Up
@@ -909,13 +909,13 @@ uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote gdr
 `rclone` defaults to "My Drive". To bind a remote to a Google Workspace Shared Drive (Team Drive), use `--shared-drive`:
 
 ```bash
-uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --list-shared-drives
-uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote gdrive --shared-drive "Shared Drive Name"
+uv run skills/google-oauth/scripts/google_oauth.py configure-rclone --list-shared-drives
+uv run skills/google-oauth/scripts/google_oauth.py configure-rclone --remote gdrive --shared-drive "Shared Drive Name"
 ```
 
 ## Next Steps
 
-- See the **`google_oauth`** skill (`skills/google_oauth/SKILL.md`) for OAuth authentication and Shared Drive setup
+- See the **`google-oauth`** skill (`skills/google-oauth/SKILL.md`) for OAuth authentication and Shared Drive setup
 - See [references/CONFIGURATION_DETAILS.md](references/CONFIGURATION_DETAILS.md) for advanced options
 - Check [references/COMMON_WORKFLOWS.md](references/COMMON_WORKFLOWS.md) for practical examples
 
@@ -925,8 +925,8 @@ uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote gdr
 # Check installation
 rclone version
 
-# Configure Google Drive from google_oauth credentials
-uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote gdrive
+# Configure Google Drive from google-oauth credentials
+uv run skills/google-oauth/scripts/google_oauth.py configure-rclone --remote gdrive
 
 # List remotes
 rclone listremotes

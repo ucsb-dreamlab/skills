@@ -1,5 +1,5 @@
 ---
-name: google_oauth
+name: google-oauth
 description: Authenticate with Google OAuth 2.0 in a DREAM Lab Coder remote workspace using ~/.config/dreamlab/google_client.json and uv/Python for arbitrary scopes (Drive, Sheets, Docs, Calendar, Gmail, etc.). Saves unified Application Default Credentials to ~/.config/gcloud/application_default_credentials.json and configures rclone.
 ---
 

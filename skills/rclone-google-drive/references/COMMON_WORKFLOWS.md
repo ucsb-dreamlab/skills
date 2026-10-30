@@ -362,20 +362,20 @@ rclone copy --retries=10 ~/Documents gdrive:Backups/Documents
 
 ### Fix Authentication Issues
 ```bash
-# Check saved credentials and scopes via the google_oauth skill
-uv run skills/google_oauth/scripts/google_oauth.py status
+# Check saved credentials and scopes via the google-oauth skill
+uv run skills/google-oauth/scripts/google_oauth.py status
 
 # Re-authenticate with drive scope and update the rclone remote
-uv run skills/google_oauth/scripts/google_oauth.py url --scopes drive
-uv run skills/google_oauth/scripts/google_oauth.py exchange '<REDIRECT_URL>'
-uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote gdrive
+uv run skills/google-oauth/scripts/google_oauth.py url --scopes drive
+uv run skills/google-oauth/scripts/google_oauth.py exchange '<REDIRECT_URL>'
+uv run skills/google-oauth/scripts/google_oauth.py configure-rclone --remote gdrive
 ```
 
 ### Clear Cache and Reset
 ```bash
 # Delete the remote and re-create from saved credentials
 rclone config delete gdrive
-uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote gdrive
+uv run skills/google-oauth/scripts/google_oauth.py configure-rclone --remote gdrive
 ```
 
 ## Advanced Workflows

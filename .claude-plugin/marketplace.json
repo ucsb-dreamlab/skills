@@ -37,7 +37,7 @@
     },
     {
       "name": "rclone-google-drive",
-      "description": "Access and manage Google Drive (My Drive and Shared Drives) via rclone CLI, using the google_oauth skill for authentication and remote setup",
+      "description": "Access and manage Google Drive (My Drive and Shared Drives) via rclone CLI, using the google-oauth skill for authentication and remote setup",
       "source": "./",
       "strict": false,
       "skills": [
@@ -45,12 +45,12 @@
       ]
     },
     {
-      "name": "google_oauth",
+      "name": "google-oauth",
       "description": "Authenticate with Google OAuth 2.0 in a DREAM Lab Coder remote workspace using ~/.config/dreamlab/google_client.json and uv/Python for arbitrary Google API scopes, saving Application Default Credentials and configuring rclone",
       "source": "./",
       "strict": false,
       "skills": [
-        "./skills/google_oauth"
+        "./skills/google-oauth"
       ]
     }
   ]
