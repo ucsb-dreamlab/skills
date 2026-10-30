@@ -14,6 +14,8 @@ import json
 import os
 from pathlib import Path
 import subprocess
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 import requests
 
@@ -47,8 +49,21 @@ def resolve_scopes(raw_scopes: list[str]) -> list[str]:
             part = part.strip()
             if not part:
                 continue
-            scopes.append(SCOPE_ALIASES.get(part, part))
+            resolved = SCOPE_ALIASES.get(part, part)
+            if resolved not in scopes:
+                scopes.append(resolved)
     return scopes
+
+
+def load_existing_scopes(adc_file: Path) -> list[str]:
+    if not adc_file.exists():
+        return []
+    try:
+        data = json.loads(adc_file.read_text())
+        scopes = data.get("scopes", [])
+        return [s for s in scopes if isinstance(s, str)]
+    except Exception:
+        return []
 
 
 def cmd_url(args: argparse.Namespace) -> None:
@@ -59,16 +74,28 @@ def cmd_url(args: argparse.Namespace) -> None:
             "Place your Google OAuth Desktop client JSON at ~/.config/dreamlab/google_client.json"
         )
 
-    scopes = resolve_scopes(args.scopes)
+    adc_file = Path(args.credentials).expanduser()
+    requested_scopes = resolve_scopes(args.scopes)
+    existing_scopes = [] if args.replace_scopes else load_existing_scopes(adc_file)
+
+    scopes = list(existing_scopes)
+    for s in requested_scopes:
+        if s not in scopes:
+            scopes.append(s)
+
     flow = InstalledAppFlow.from_client_secrets_file(
         str(client_file),
         scopes=scopes,
         redirect_uri=REDIRECT_URI,
     )
-    auth_url, state = flow.authorization_url(
-        access_type="offline",
-        prompt="consent",
-    )
+    auth_kwargs = {
+        "access_type": "offline",
+        "prompt": "consent",
+    }
+    if args.include_granted_scopes:
+        auth_kwargs["include_granted_scopes"] = "true"
+
+    auth_url, state = flow.authorization_url(**auth_kwargs)
     STATE_FILE.write_text(
         json.dumps(
             {
@@ -80,7 +107,16 @@ def cmd_url(args: argparse.Namespace) -> None:
         )
     )
     STATE_FILE.chmod(0o600)
-    print(auth_url)
+
+    if existing_scopes:
+        print(f"Existing scopes in {adc_file}:")
+        for s in existing_scopes:
+            print(f"  - {s}")
+    print("Requesting scopes:")
+    for s in scopes:
+        marker = " (new)" if existing_scopes and s not in existing_scopes else ""
+        print(f"  - {s}{marker}")
+    print(f"\nAuthorization URL:\n{auth_url}")
 
 
 def cmd_exchange(args: argparse.Namespace) -> None:
@@ -111,6 +147,8 @@ def cmd_exchange(args: argparse.Namespace) -> None:
             .replace("+00:00", "Z")
         )
 
+    granted_scopes = list(creds.granted_scopes or creds.scopes or saved["scopes"])
+
     # Unified JSON format compatible with:
     # 1. Google Application Default Credentials (google.auth.default())
     # 2. google.oauth2.credentials.Credentials.from_authorized_user_file()
@@ -124,7 +162,7 @@ def cmd_exchange(args: argparse.Namespace) -> None:
         "token": creds.token,
         "token_type": "Bearer",
         "token_uri": creds.token_uri or "https://oauth2.googleapis.com/token",
-        "scopes": list(creds.scopes or saved["scopes"]),
+        "scopes": granted_scopes,
         "expiry": expiry_iso,
     }
 
@@ -134,12 +172,82 @@ def cmd_exchange(args: argparse.Namespace) -> None:
     adc_file.chmod(0o600)
     STATE_FILE.unlink(missing_ok=True)
     print(f"Saved credentials to {adc_file}")
+    print("Granted scopes on token:")
+    for s in granted_scopes:
+        print(f"  - {s}")
+
+
+def cmd_status(args: argparse.Namespace) -> None:
+    adc_file = Path(args.credentials).expanduser()
+    if not adc_file.exists():
+        print(f"No credentials file found at {adc_file}")
+        return
+    data = json.loads(adc_file.read_text())
+    scopes = data.get("scopes", [])
+    print(f"Credentials file: {adc_file}")
+    print(f"Has refresh_token: {bool(data.get('refresh_token'))}")
+    print(f"Token expiry: {data.get('expiry') or 'unknown'}")
+    print(f"Granted scopes ({len(scopes)}):")
+    for s in scopes:
+        print(f"  - {s}")
+
+
+def list_shared_drives(adc_file: Path) -> list[dict]:
+    creds = Credentials.from_authorized_user_file(str(adc_file))
+    if not creds.valid and creds.refresh_token:
+        creds.refresh(Request())
+    drives = []
+    page_token = None
+    while True:
+        params = {"pageSize": 100}
+        if page_token:
+            params["pageToken"] = page_token
+        resp = requests.get(
+            "https://www.googleapis.com/drive/v3/drives",
+            headers={"Authorization": f"Bearer {creds.token}"},
+            params=params,
+            timeout=15,
+        )
+        resp.raise_for_status()
+        body = resp.json()
+        drives.extend(body.get("drives", []))
+        page_token = body.get("nextPageToken")
+        if not page_token:
+            break
+    return drives
+
+
+def resolve_shared_drive(adc_file: Path, query: str) -> tuple[str, str]:
+    drives = list_shared_drives(adc_file)
+    for d in drives:
+        if d["id"] == query or d["name"].lower() == query.lower():
+            return d["id"], d["name"]
+    matches = [d for d in drives if query.lower() in d["name"].lower()]
+    if len(matches) == 1:
+        return matches[0]["id"], matches[0]["name"]
+    if len(matches) > 1:
+        lines = "\n".join(f"  - {d['name']} (id: {d['id']})" for d in matches)
+        raise SystemExit(
+            f"Multiple Shared Drives match '{query}'. Specify a more exact name or ID:\n{lines}"
+        )
+    lines = "\n".join(f"  - {d['name']} (id: {d['id']})" for d in drives)
+    raise SystemExit(f"No Shared Drive matching '{query}'. Available Shared Drives:\n{lines}")
 
 
 def cmd_configure_rclone(args: argparse.Namespace) -> None:
     adc_file = Path(args.credentials).expanduser()
     if not adc_file.exists():
         raise SystemExit(f"Error: Credentials file not found at {adc_file}. Authenticate first.")
+
+    if args.list_shared_drives:
+        drives = list_shared_drives(adc_file)
+        if not drives:
+            print("No Shared Drives found.")
+            return
+        print(f"Shared Drives ({len(drives)}):")
+        for d in drives:
+            print(f"  {d['id']}  {d['name']}")
+        return
 
     data = json.loads(adc_file.read_text())
     rclone_token = json.dumps(
@@ -164,13 +272,19 @@ def cmd_configure_rclone(args: argparse.Namespace) -> None:
         data["client_secret"],
         "token",
         rclone_token,
-        "--non-interactive",
     ]
+    shared_info = ""
+    if args.shared_drive:
+        drive_id, drive_name = resolve_shared_drive(adc_file, args.shared_drive)
+        cmd.extend(["team_drive", drive_id])
+        shared_info = f" (Shared Drive: '{drive_name}' [{drive_id}])"
+
+    cmd.append("--non-interactive")
     subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
     rclone_conf = Path.home() / ".config/rclone/rclone.conf"
     if rclone_conf.exists():
         rclone_conf.chmod(0o600)
-    print(f"Configured rclone remote '{args.remote}:' from {adc_file}")
+    print(f"Configured rclone remote '{args.remote}:'{shared_info} from {adc_file}")
 
 
 def cmd_revoke(args: argparse.Namespace) -> None:
@@ -208,6 +322,28 @@ def main() -> None:
         default=str(DEFAULT_CLIENT_FILE),
         help=f"Path to OAuth client JSON (default: {DEFAULT_CLIENT_FILE})",
     )
+    p_url.add_argument(
+        "--credentials",
+        default=str(DEFAULT_ADC_FILE),
+        help=f"Existing credentials file to merge scopes from (default: {DEFAULT_ADC_FILE})",
+    )
+    p_url.add_argument(
+        "--replace-scopes",
+        action="store_true",
+        help="Do not merge with existing scopes in the saved credentials file",
+    )
+    p_url.add_argument(
+        "--include-granted-scopes",
+        action="store_true",
+        default=True,
+        help="Pass include_granted_scopes=true to Google OAuth (default: True)",
+    )
+    p_url.add_argument(
+        "--no-include-granted-scopes",
+        action="store_false",
+        dest="include_granted_scopes",
+        help="Disable passing include_granted_scopes=true to Google OAuth",
+    )
     p_url.set_defaults(func=cmd_url)
 
     p_ex = sub.add_parser("exchange", help="Exchange redirect URL for credentials")
@@ -223,6 +359,14 @@ def main() -> None:
     )
     p_ex.set_defaults(func=cmd_exchange)
 
+    p_st = sub.add_parser("status", help="Show saved credentials and granted scopes")
+    p_st.add_argument(
+        "--credentials",
+        default=str(DEFAULT_ADC_FILE),
+        help=f"Credentials file path (default: {DEFAULT_ADC_FILE})",
+    )
+    p_st.set_defaults(func=cmd_status)
+
     p_rc = sub.add_parser(
         "configure-rclone",
         help="Configure an rclone Google Drive remote from the saved credentials",
@@ -232,6 +376,16 @@ def main() -> None:
         "--remote",
         default="gdrive",
         help="rclone remote name (default: gdrive)",
+    )
+    p_rc.add_argument(
+        "-s",
+        "--shared-drive",
+        help="Optional Shared Drive (Team Drive) name or ID to bind the remote to",
+    )
+    p_rc.add_argument(
+        "--list-shared-drives",
+        action="store_true",
+        help="List available Shared Drives and exit",
     )
     p_rc.add_argument(
         "--credentials",

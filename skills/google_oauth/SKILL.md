@@ -39,6 +39,11 @@ uv run scripts/google_oauth.py url --scopes drive
 uv run scripts/google_oauth.py url --scopes drive calendar.readonly gmail.readonly
 ```
 
+**Scope Accumulation (Incremental Auth):**
+- By default, `url` merges any scopes already present in `~/.config/gcloud/application_default_credentials.json` with your newly requested `--scopes` AND passes `include_granted_scopes="true"`, printing out both the existing and newly requested scopes.
+- Pass `--replace-scopes --no-include-granted-scopes` if you want to discard previously granted scopes and request only the specified scopes.
+- Run `uv run scripts/google_oauth.py status` at any time to inspect the currently saved credential and its full list of granted scopes.
+
 ### 2. Have the User Authorize in Their Browser
 
 Give the printed URL to the user and instruct them to:
@@ -54,7 +59,7 @@ Give the printed URL to the user and instruct them to:
 uv run scripts/google_oauth.py exchange 'PASTE_REDIRECT_URL_HERE'
 ```
 
-This saves the unified credential to `~/.config/gcloud/application_default_credentials.json` (`0600`).
+This saves the unified credential to `~/.config/gcloud/application_default_credentials.json` (`0600`) and prints the full list of granted scopes returned by Google on the token.
 
 ---
 
@@ -66,11 +71,15 @@ If the token includes a Drive scope (`drive`, `drive.readonly`, or `drive.file`)
 # Install rclone if needed
 which rclone >/dev/null || (curl -fsSL https://rclone.org/install.sh | sudo bash)
 
-# Create/update the 'gdrive:' remote non-interactively
+# Create/update the 'gdrive:' remote non-interactively (My Drive)
 uv run scripts/google_oauth.py configure-rclone --remote gdrive
 
+# Or list and bind to a Shared Drive (Team Drive) by name or ID:
+uv run scripts/google_oauth.py configure-rclone --list-shared-drives
+uv run scripts/google_oauth.py configure-rclone --remote gdrive --shared-drive "Carpentry"
+
 # Verify access
-rclone about gdrive:
+rclone lsd gdrive:
 ```
 
 *(Equivalent manual `rclone` command using `jq`)*:
