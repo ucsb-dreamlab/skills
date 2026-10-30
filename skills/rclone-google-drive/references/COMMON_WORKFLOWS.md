@@ -70,13 +70,13 @@ echo "Log saved: $LOG_FILE"
 
 ## Download & Recovery Workflows
 
-### Download Entire Google Drive Folder
+### Download a Specific Google Drive Folder
 ```bash
-# Download to local folder
-rclone copy gdrive: ~/Downloads/GoogleDrive
-
-# Only specific folder
+# Download a specific folder
 rclone copy gdrive:MyFolder ~/Downloads/MyFolder
+
+# Or download a specific folder by ID
+rclone copy gdrive: ~/Downloads/MyFolder --drive-root-folder-id="FOLDER_ID"
 
 # Show what will be downloaded (dry-run)
 rclone copy --dry-run gdrive:MyFolder ~/Downloads/MyFolder
@@ -120,28 +120,28 @@ rclone move gdrive:OldFolder gdrive:NewFolder
 rclone move gdrive:OldName.txt gdrive:NewName.txt
 ```
 
-### Organize by Extension
+### Organize by Extension (Scoped to a Folder)
 ```bash
-# Copy all PDFs to a dedicated folder
-rclone copy --include="*.pdf" gdrive: gdrive:PDFs_Only
+# Copy all PDFs from a folder to a dedicated folder
+rclone copy --include="*.pdf" gdrive:MyFolder gdrive:PDFs_Only
 
-# Copy images
-rclone copy --include="*.{jpg,png,gif}" gdrive: gdrive:Images_Only
+# Copy images from a folder
+rclone copy --include="*.{jpg,png,gif}" gdrive:MyFolder gdrive:Images_Only
 ```
 
-### Clean Up Duplicates
+### Clean Up Duplicates (Scoped to a Folder)
 ```bash
-# Find and remove duplicate files
-rclone dedupe gdrive:
+# Find and remove duplicate files in a folder
+rclone dedupe gdrive:MyFolder
 
 # Interactive mode (choose which to keep)
-rclone dedupe --dedupe=interactive gdrive:
+rclone dedupe --dedupe-mode interactive gdrive:MyFolder
 
 # Auto-remove, keeping newest version
-rclone dedupe --dedupe=newest gdrive:
+rclone dedupe --dedupe-mode newest gdrive:MyFolder
 
 # Auto-remove, keeping oldest version
-rclone dedupe --dedupe=oldest gdrive:
+rclone dedupe --dedupe-mode oldest gdrive:MyFolder
 ```
 
 ### Archive Old Files
@@ -198,19 +198,16 @@ rclone check ~/Documents/important.txt gdrive:Backup/important.txt
 rclone check -vv ~/Documents gdrive:Backup | grep -i mismatch
 ```
 
-### List Files with Sizes
+### List Files with Sizes (Scoped to a Folder)
 ```bash
-# Show all files with sizes
-rclone ls gdrive:
-
-# Show files in specific folder
+# Show files in a specific folder
 rclone ls gdrive:MyFolder
 
-# Show folders only
+# Show top-level folders only
 rclone lsd gdrive:
 
-# Show with human-readable sizes
-rclone lsf -R -h gdrive: | sort
+# Show with human-readable sizes in a specific folder
+rclone lsf -R -h gdrive:MyFolder | sort
 ```
 
 ## Performance & Bandwidth Workflows
@@ -365,39 +362,28 @@ rclone copy --retries=10 ~/Documents gdrive:Backups/Documents
 
 ### Fix Authentication Issues
 ```bash
-# Re-authenticate
-rclone config edit
+# Check saved credentials and scopes via the google_oauth skill
+uv run skills/google_oauth/scripts/google_oauth.py status
 
-# Delete the remote and reconfigure
-rclone config delete gdrive
-rclone config new gdrive
-
-# Check current token
-cat ~/.config/rclone/rclone.conf | grep token
+# Re-authenticate with drive scope and update the rclone remote
+uv run skills/google_oauth/scripts/google_oauth.py url --scopes drive
+uv run skills/google_oauth/scripts/google_oauth.py exchange '<REDIRECT_URL>'
+uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote gdrive
 ```
 
 ### Clear Cache and Reset
 ```bash
-# Clear rclone cache
-rclone cache clear
-
-# Clear specific remote cache
-rclone cache clear gdrive:
-
-# Reset configuration
-rm ~/.config/rclone/rclone.conf
-rclone config
+# Delete the remote and re-create from saved credentials
+rclone config delete gdrive
+uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote gdrive
 ```
 
 ## Advanced Workflows
 
-### Mirror Remote Structure Locally
+### Mirror Folder Structure Locally
 ```bash
-# Copy entire Google Drive structure
-rclone copy gdrive: ~/GoogleDriveBackup
-
-# Just directory structure (no files)
-rclone copy --max-size=0 gdrive: ~/GoogleDriveBackup
+# Copy a specific folder's directory structure (no files)
+rclone copy --max-size=0 gdrive:MyFolder ~/MyFolderStructure
 ```
 
 ### Incremental Backups with Dates

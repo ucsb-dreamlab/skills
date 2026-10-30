@@ -37,7 +37,7 @@
     },
     {
       "name": "rclone-google-drive",
-      "description": "Set up and manage Google Drive access via rclone CLI with installation, configuration verification, and guided OAuth2 authentication",
+      "description": "Access and manage Google Drive (My Drive and Shared Drives) via rclone CLI, using the google_oauth skill for authentication and remote setup",
       "source": "./",
       "strict": false,
       "skills": [

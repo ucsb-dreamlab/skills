@@ -1,17 +1,12 @@
 ---
 name: rclone-google-drive
-description: Set up and manage Google Drive access via rclone CLI with installation, configuration verification, and guided OAuth2 authentication. Includes homebrew installation for macOS and step-by-step setup for individual accounts or service accounts. Use when accessing Google Drive from command line, backing up files, or automating cloud storage operations.
+description: Access and manage Google Drive (My Drive and Shared Drives) via rclone CLI. Uses the google_oauth skill to authenticate and configure remotes, and provides safe patterns for searching, exporting/importing Google Docs/Sheets/Slides, and transferring files without full-drive scans.
 license: MIT
-compatibility: macOS, Linux (homebrew installation for macOS)
-metadata:
-  author: pmunin
-  version: "1.0"
-  documentation: "https://rclone.org/drive"
 ---
 
-# Rclone Google Drive Setup Guide
+# Rclone Google Drive Guide
 
-This skill walks you through setting up rclone to access Google Drive via command line. It handles installation verification, configuration setup, and authentication.
+Use this skill to interact with Google Drive (including Shared Drives) via `rclone`. For OAuth2 authentication and creating/updating `rclone` remotes, use the **`google_oauth`** skill.
 
 ## ⚠️ Critical Usage Guidelines
 
@@ -21,9 +16,10 @@ This skill walks you through setting up rclone to access Google Drive via comman
 ❌ UNACCEPTABLE:
 rclone copy gdrive: ~/backup              # Entire drive!
 rclone sync gdrive: ~/backup              # Entire drive!
-rclone ls gdrive:                         # List entire drive!
+rclone ls gdrive:                         # List entire drive recursively!
 
 ✅ ACCEPTABLE:
+rclone lsd gdrive:                        # List top-level folders only (non-recursive)
 rclone copy gdrive:"MyFolder" ~/backup --drive-export-formats pdf    # Specific folder by name
 rclone copy gdrive: ~/backup --drive-root-folder-id="FOLDER_ID" --drive-export-formats pdf  # Entire folder by ID
 rclone copy gdrive:"Document" ~/context/ --drive-export-formats pdf  # Specific file
@@ -32,146 +28,45 @@ rclone backend copyid gdrive: FILE-ID ./ --drive-export-formats pdf  # Specific 
 
 **Safe Limits:**
 
+- ✅ List top-level directories with `rclone lsd gdrive:`
 - ✅ Download specific named files/folders
-- ✅ Download specific files by ID
+- ✅ Download specific files by ID (`rclone backend copyid`)
 - ✅ Download entire folder by ID using `--drive-root-folder-id` flag
 - ✅ Download a folder with up to ~50 files
 - ✅ Use targeted `lsjson` / folder listings with filters or `jq` to find files and IDs
 - ❌ Download entire drive without `--drive-root-folder-id`
+- ❌ Run recursive `rclone ls gdrive:` on the drive root
 - ❌ Download large folders without checking file count
 
-## Quick Start
+## Authentication & Remote Setup (via `google_oauth` Skill)
 
-Run the installation and configuration checker:
+Do **not** use interactive `rclone config` in a remote workspace. Instead, load and follow the **`google_oauth`** skill (`skills/google_oauth/SKILL.md`), which authenticates using `~/.config/dreamlab/google_client.json`, saves unified credentials to `~/.config/gcloud/application_default_credentials.json`, and configures `rclone` non-interactively:
 
-```bash
-bash scripts/check-rclone-setup.sh
-```
+1. **Ensure `rclone` is installed:**
+   ```bash
+   which rclone >/dev/null || (curl -fsSL https://rclone.org/install.sh | sudo bash)
+   ```
 
-This script will:
-1. ✅ Check if rclone is installed
-2. ✅ Verify Google Drive remote configuration exists
-3. ✅ Install via homebrew if needed (macOS)
-4. ✅ Walk you through configuration if needed
+2. **Authenticate with `drive` scope (if not already authenticated):**
+   Follow the `google_oauth` skill (`uv run skills/google_oauth/scripts/google_oauth.py status` to check existing scopes, then `url --scopes drive` and `exchange`).
 
-## Prerequisites
+3. **Configure the `rclone` remote from saved credentials:**
+   ```bash
+   # Personal "My Drive" remote:
+   uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote gdrive
 
-- **macOS**: Homebrew (install from https://brew.sh if needed)
-- **Linux**: Package manager support (apt, yum, etc.)
-- **Google Account**: Active Google account with Drive access
-- **Browser**: Web browser for OAuth2 authentication
+   # Or list and bind to a Shared Drive (Team Drive):
+   uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --list-shared-drives
+   uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote gdrive --shared-drive "Carpentry"
+   ```
 
-## Installation
-
-### macOS (Homebrew)
-
-```bash
-brew install rclone
-```
-
-### Linux
-
-```bash
-# Ubuntu/Debian
-sudo apt-get install rclone
-
-# Or install from source
-curl https://rclone.org/install.sh | sudo bash
-```
-
-### Verify Installation
-
-```bash
-rclone version
-```
-
-## Configuration: Setting Up Google Drive Access
-
-### Step 1: Start Interactive Configuration
-
-```bash
-rclone config
-```
-
-When prompted, select option `n` to add a new remote.
-
-### Step 2: Remote Name
-
-Enter a name for your Google Drive remote. Common names:
-- `gdrive` (short and simple)
-- `google-drive` (descriptive)
-- `backup` (if dedicated for backups)
-
-**You'll use this name in commands as `remote-name:`**
-
-### Step 3: Storage Type
-
-Select option `17` (or search for "Google Drive") when asked for storage type.
-
-### Step 4: Configure OAuth2
-
-You'll be prompted with several options:
-
-```
-OAuth Client ID: [leave blank for default - press Enter]
-OAuth Client Secret: [leave blank for default - press Enter]
-Scope: [1] drive (recommended for full access)
-Root folder ID: [leave blank unless restricting to a subfolder]
-```
-
-**Default Scope Options:**
-- `1` - `drive` - Full access to all files (recommended)
-- `2` - `drive.readonly` - Read-only access
-- `3` - `drive.file` - Only files created by rclone
-- `4` - `drive.appfolder` - Private rclone storage
-- `5` - `drive.metadata.readonly` - File names only
-
-### Step 5: Browser Authentication
-
-When prompted "Use auto config?", select **`y`** (yes). Rclone will:
-1. Open your web browser automatically
-2. Ask you to sign in to your Google Account
-3. Request permission for the selected scope
-4. Return an authorization token to rclone
-
-**If browser doesn't open:**
-- Option `n` opens a manual authentication URL
-- Copy the URL into your browser
-- Complete the OAuth flow
-- Paste the token back into the terminal
-
-### Step 6: Confirm Configuration
-
-Review the remote settings and press `y` to confirm.
-
-### Step 7: Exit Configuration
-
-Type `q` to quit the rclone config menu.
-
-### Step 8: Verify Configuration Was Saved
-
-**Important:** The config can sometimes appear to complete but fail to save (empty config file). Always verify immediately:
-
-```bash
-rclone listremotes
-```
-
-If the output is blank or shows a "Config file not found" notice, the config was not saved. Run `rclone config` again and ensure you press `y` to confirm and `q` to quit (not exit early).
-
-## Verifying Your Setup
-
-Test your configuration:
-
-```bash
-# List root directory
-rclone lsd gdrive:
-
-# Check quota and account info
-rclone about gdrive:
-
-# List all files (verbose)
-rclone ls gdrive:
-```
+4. **Verify Setup:**
+   ```bash
+   rclone listremotes
+   rclone lsd gdrive:
+   rclone about gdrive:
+   ```
+   *(Or run `bash skills/rclone-google-drive/scripts/check-rclone-setup.sh`.)*
 
 ## Essential Commands
 
@@ -848,8 +743,8 @@ Set default export and import formats in your remote configuration:
 [gdrive]
 type = drive
 ...
-drive_export_formats = pdf
-drive_import_formats = docx,xlsx,pptx,csv
+export_formats = pdf
+import_formats = docx,xlsx,pptx,csv
 ```
 
 This makes `rclone copy gdrive:"MyFolder" /local/` default to PDF exports, and automatically converts uploaded Office files into native Google Docs/Sheets without specifying flags each time.
@@ -945,59 +840,14 @@ rclone lsjson gdrive:"$FOLDER_NAME" | jq -r '.[0:10][] | .ID' | \
   xargs -I {} rclone backend copyid gdrive: {} ~/downloads/ --drive-export-formats pdf
 ```
 
-## Advanced Configuration: Service Accounts
-
-For unattended access (automated backups, build machines), use a service account instead of OAuth2:
-
-### Create Google API Credentials
-
-1. Visit [Google Cloud Console](https://console.cloud.google.com/)
-2. Create or select a project
-3. Enable **Google Drive API** (search in APIs & Services)
-4. Go to **Credentials** → **Create Credentials** → **Service Account**
-5. Download the service account JSON file
-6. Note the JSON file path
-
-### Configure Rclone for Service Account
-
-```bash
-rclone config
-```
-
-When prompted:
-- Remote name: (choose a name like `gdrive-service`)
-- Storage type: `Google Drive`
-- OAuth Client ID/Secret: (leave blank)
-- Service Account: (paste contents of JSON file, or provide file path)
-
-### Using Service Account for Shared Drives (Workspace)
-
-For Google Workspace domain-wide delegation:
-
-1. Upload service account JSON to Google Cloud Console
-2. In **Admin Console** → **Security** → **API Controls** → **Domain-wide Delegation**
-3. Add scopes: `https://www.googleapis.com/auth/drive`
-4. In rclone config, specify the user email to impersonate
-
 ## Configuration Files
 
-Rclone stores configuration in:
+Rclone stores configuration in `~/.config/rclone/rclone.conf`.
 
-```
-~/.config/rclone/rclone.conf    # Linux/macOS
-%APPDATA%\rclone\rclone.conf    # Windows
-```
-
-**View your configuration:**
+**View configured remotes (without exposing tokens):**
 
 ```bash
-cat ~/.config/rclone/rclone.conf
-```
-
-**Edit configuration directly:**
-
-```bash
-rclone config edit
+rclone listremotes
 ```
 
 ## Important Limitations & Notes
@@ -1009,25 +859,18 @@ Google Drive enforces rate limits:
 - **Download limit**: 10 TiB per day
 - **Upload limit**: 750 GiB per day
 
-Default rclone client shares quota with all users. **Create your own Google API credentials** for better performance.
-
 ### Google Docs & Sheets
 
 - Appear as size `-1` in listings
-- Cannot be downloaded directly (use Export API)
-- Skipped by default in transfers
+- Cannot be downloaded directly as binary files (use `--drive-export-formats`)
 
 ### File Duplication
 
-Google Drive may duplicate files uploaded by rclone. Use `rclone dedupe` to remove duplicates:
+Google Drive allows multiple files with the same name in the same folder. Use `rclone dedupe` on a specific folder to clean up duplicates:
 
 ```bash
-rclone dedupe gdrive:
+rclone dedupe gdrive:"MyFolder" --dedupe-mode interactive
 ```
-
-### Shared Drives Limitations
-
-Folders under "Computers" tab are read-only. Only use accessible shared folders.
 
 ## Known Gotchas
 
@@ -1048,73 +891,32 @@ rclone copy gdrive:"MyDoc" ~/docs/ --drive-export-formats markdown
 
 Use `md` whenever using `backend copyid`. The `rclone copy` command accepts either `markdown` or `md`.
 
-### `rclone config` may silently fail to save
-
-The interactive `rclone config` can appear to complete but leave an empty config file. This can happen if you exit early, the browser OAuth flow doesn't complete, or you don't confirm with `y`. Always verify immediately after:
-
-```bash
-rclone listremotes    # Should show your remote name
-```
-
-If empty, run `rclone config` again.
-
 ## Troubleshooting
 
-### "401 Unauthorized" Error
+### "401 Unauthorized" or "403 Insufficient Permission" Error
 
-- Token expired: run `rclone config edit` to re-authenticate
-- Wrong scope: re-configure with appropriate permissions
-- Service account: verify JSON file is valid
-
-### "Permission Denied" Error
-
-- Check Google Drive folder permissions
-- Verify scope includes write access (not `drive.readonly`)
-- For Workspace: ensure domain-wide delegation configured
-
-### Connection Timeout
-
-- Check internet connection
-- Verify firewall allows access to Google APIs
-- OAuth callback needs local web server at `http://127.0.0.1:53682/`
-
-### Configuration Not Found
-
-Verify remote exists:
+Re-authenticate or add the `drive` scope using the **`google_oauth`** skill:
 
 ```bash
-rclone listremotes
+uv run skills/google_oauth/scripts/google_oauth.py status
+uv run skills/google_oauth/scripts/google_oauth.py url --scopes drive
+# After exchanging the redirect URL:
+uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote gdrive
 ```
 
-Reconfigure if missing:
+### Shared Drive Not Showing Up
+
+`rclone` defaults to "My Drive". To bind a remote to a Google Workspace Shared Drive (Team Drive), use `--shared-drive`:
 
 ```bash
-rclone config
+uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --list-shared-drives
+uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote gdrive --shared-drive "Shared Drive Name"
 ```
-
-## Creating Your Own Google API Client ID
-
-Default rclone client shares rate limits. Create your own for better performance:
-
-1. Visit [Google Cloud Console](https://console.cloud.google.com/)
-2. Create new project
-3. **Enable APIs**: Search and enable "Google Drive API"
-4. **Configure OAuth Consent Screen**:
-   - User Type: "External"
-   - Add required scopes: `drive`, `drive.readonly`, etc.
-5. **Create Credentials**:
-   - Type: OAuth 2.0 Client ID
-   - Application type: Desktop application
-6. **Download JSON** or note Client ID and Secret
-7. In rclone config, paste your Client ID and Secret when prompted
-
-This prevents throttling and gives you control over rate limits.
 
 ## Next Steps
 
+- See the **`google_oauth`** skill (`skills/google_oauth/SKILL.md`) for OAuth authentication and Shared Drive setup
 - See [references/CONFIGURATION_DETAILS.md](references/CONFIGURATION_DETAILS.md) for advanced options
-- Run `rclone help` for full command reference
-- Visit [https://rclone.org/drive](https://rclone.org/drive) for official documentation
 - Check [references/COMMON_WORKFLOWS.md](references/COMMON_WORKFLOWS.md) for practical examples
 
 ## Common Commands Cheat Sheet
@@ -1123,22 +925,18 @@ This prevents throttling and gives you control over rate limits.
 # Check installation
 rclone version
 
-# Configure Google Drive
-rclone config
+# Configure Google Drive from google_oauth credentials
+uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote gdrive
 
 # List remotes
 rclone listremotes
 
-# List Google Drive contents
+# List top-level Google Drive folders
 rclone lsd gdrive:
 
-# Upload/download
-rclone copy /local gdrive:folder
+# Upload/download a specific folder
+rclone copy /local gdrive:"MyFolder"
 
 # Monitor quota
 rclone about gdrive:
-
-# Get help
-rclone help
-rclone help copy
 ```

@@ -92,16 +92,19 @@ if [ "$GDRIVE_CONFIGURED" = true ]; then
     else
         echo "Testing remote: ${FIRST_REMOTE}"
 
-        if rclone about "${FIRST_REMOTE}:" &> /dev/null; then
-            echo -e "${GREEN}✅ Successfully connected to Google Drive${NC}"
+        if rclone lsd "${FIRST_REMOTE}:" &> /dev/null; then
+            echo -e "${GREEN}✅ Successfully connected to Google Drive (${FIRST_REMOTE}:)${NC}"
 
-            # Show quota info
+            # Show quota info if available (not supported on Shared Drives)
             echo ""
             rclone about "${FIRST_REMOTE}:" 2>/dev/null || true
         else
-            echo -e "${YELLOW}⚠️  Cannot access remote (may need re-authentication)${NC}"
-            echo "Run: rclone config edit"
-            echo "Then re-authenticate when prompted"
+            echo -e "${YELLOW}⚠️  Cannot access remote (may need re-authentication or drive scope)${NC}"
+            echo "Use the google_oauth skill to authenticate and update rclone:"
+            echo "  uv run skills/google_oauth/scripts/google_oauth.py status"
+            echo "  uv run skills/google_oauth/scripts/google_oauth.py url --scopes drive"
+            echo "  uv run skills/google_oauth/scripts/google_oauth.py exchange '<REDIRECT_URL>'"
+            echo "  uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote ${FIRST_REMOTE}"
         fi
     fi
 
@@ -111,45 +114,31 @@ if [ "$GDRIVE_CONFIGURED" = true ]; then
     echo -e "${GREEN}═══════════════════════════════════════════════════════════${NC}"
     echo ""
     echo "Quick start commands:"
-    echo "  rclone lsd ${FIRST_REMOTE}:           # List directories"
-    echo "  rclone ls ${FIRST_REMOTE}:            # List all files"
-    echo "  rclone about ${FIRST_REMOTE}:         # View quota"
-    echo "  rclone help                # Show all commands"
+    echo "  rclone lsd ${FIRST_REMOTE}:                  # List top-level directories"
+    echo "  rclone ls ${FIRST_REMOTE}:\"MyFolder\"         # List files in a specific folder"
+    echo "  rclone about ${FIRST_REMOTE}:                # View quota (My Drive)"
     echo ""
     echo "For detailed help, see: SKILL.md"
     echo ""
 
 else
     echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
-    echo -e "${BLUE}Setting up Google Drive access...${NC}"
+    echo -e "${BLUE}Setting up Google Drive access via google_oauth skill...${NC}"
     echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
     echo ""
-    echo "Run the following command to configure Google Drive:"
+    echo "Use the google_oauth skill to authenticate and configure rclone:"
     echo ""
-    echo -e "${YELLOW}    rclone config${NC}"
+    echo "  1. Check existing credentials/scopes:"
+    echo "     uv run skills/google_oauth/scripts/google_oauth.py status"
     echo ""
-    echo "Configuration steps:"
-    echo "  1. Type 'n' to add a new remote"
-    echo "  2. Enter remote name (e.g., 'gdrive')"
-    echo "  3. Select '17' for Google Drive storage type"
-    echo "  4. Leave OAuth Client ID/Secret blank (use defaults)"
-    echo "  5. Select scope '1' for 'drive' (full access)"
-    echo "  6. Answer 'y' to auto config (browser will open)"
-    echo "  7. Sign in with your Google account"
-    echo "  8. Grant permission"
-    echo "  9. Type 'q' to quit config"
+    echo "  2. If 'drive' scope is not yet granted, generate an auth URL and exchange:"
+    echo "     uv run skills/google_oauth/scripts/google_oauth.py url --scopes drive"
+    echo "     uv run skills/google_oauth/scripts/google_oauth.py exchange '<REDIRECT_URL>'"
     echo ""
-    echo "Then run this script again to verify setup."
+    echo "  3. Configure the rclone remote (for My Drive or a Shared Drive):"
+    echo "     uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote gdrive"
+    echo "     # Or for a Shared Drive:"
+    echo "     uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --list-shared-drives"
+    echo "     uv run skills/google_oauth/scripts/google_oauth.py configure-rclone --remote gdrive --shared-drive \"<NAME_OR_ID>\""
     echo ""
-
-    read -p "Ready to run 'rclone config'? (y/n): " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        rclone config
-        echo ""
-        echo "Configuration complete! Running setup check again..."
-        echo ""
-        # Re-run this script to verify
-        bash "$(dirname "$0")/check-rclone-setup.sh"
-    fi
 fi
