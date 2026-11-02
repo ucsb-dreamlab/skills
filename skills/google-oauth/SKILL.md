@@ -11,7 +11,7 @@ Use this skill in a **DREAM Lab Coder remote workspace** to authenticate with Go
 
 1. **OAuth Client Secret (Input):**
    `~/.config/dreamlab/google_client.json`
-   *(Pre-provisioned in DREAM Lab Coder remote workspaces; Google Cloud OAuth 2.0 "Desktop / Installed App" JSON containing `client_id` and `client_secret`.)*
+   *(Pre-provisioned in DREAM Lab Coder remote workspaces; Google Cloud OAuth 2.0 Web or Installed App JSON containing `client_id`, `client_secret`, and `redirect_uris` such as `https://dreamlab.ucsb.edu/callback.html`.)*
 
 2. **Saved User Credential (Output):**
    `~/.config/gcloud/application_default_credentials.json` (`0600` permissions)
@@ -28,7 +28,7 @@ Run the bundled `scripts/google_oauth.py` script via `uv run` in two stateless s
 
 ### 1. Generate the Consent URL
 
-Pass one or more scope aliases (`drive`, `drive.readonly`, `drive.file`, `spreadsheets`, `documents`, `calendar`, `calendar.readonly`, `gmail.readonly`, `gmail.modify`) or full `https://www.googleapis.com/auth/...` URLs:
+Pass one or more scope aliases (`drive`, `drive.readonly`, `drive.file`, `spreadsheets`, `documents`, `calendar`, `calendar.readonly`, `gmail.readonly`, `gmail.compose`, `gmail.modify`, `gmail.send`) or full `https://www.googleapis.com/auth/...` URLs:
 
 ```bash
 uv run scripts/google_oauth.py url --scopes drive
@@ -48,8 +48,8 @@ uv run scripts/google_oauth.py url --scopes drive calendar.readonly gmail.readon
 
 Give the printed URL to the user and instruct them to:
 1. Open the link in their browser, sign in, and click **Allow**.
-2. Their browser will redirect to `http://127.0.0.1:53682/?state=...&code=...` and show **"This site can't be reached"** (expected, since `127.0.0.1` is the user's laptop rather than the remote workspace).
-3. Copy that full `http://127.0.0.1:53682/...` URL from the browser's address bar and paste it back into chat.
+2. Their browser will redirect to `https://dreamlab.ucsb.edu/callback.html?state=...&code=...` (or `http://127.0.0.1:53682/?...` if using a legacy Desktop client).
+3. Click **Copy Callback URL** on the callback page (or copy the full URL from the browser's address bar) and paste it back into chat.
 
 *(Never fetch or open the authorization URL yourself.)*
 

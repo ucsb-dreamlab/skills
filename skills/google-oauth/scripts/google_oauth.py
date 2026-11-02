@@ -37,9 +37,25 @@ SCOPE_ALIASES = {
     "calendar": "https://www.googleapis.com/auth/calendar",
     "calendar.readonly": "https://www.googleapis.com/auth/calendar.readonly",
     "gmail.readonly": "https://www.googleapis.com/auth/gmail.readonly",
+    "gmail.compose": "https://www.googleapis.com/auth/gmail.compose",
     "gmail.modify": "https://www.googleapis.com/auth/gmail.modify",
     "gmail.send": "https://www.googleapis.com/auth/gmail.send",
 }
+
+
+def resolve_redirect_uri(client_file: Path, explicit_uri: str | None = None) -> str:
+    if explicit_uri:
+        return explicit_uri
+    try:
+        data = json.loads(client_file.read_text())
+        cfg = data.get("web") or data.get("installed") or {}
+        uris = cfg.get("redirect_uris", [])
+        for u in uris:
+            if u.startswith("https://"):
+                return u
+    except Exception:
+        pass
+    return REDIRECT_URI
 
 
 def resolve_scopes(raw_scopes: list[str]) -> list[str]:
@@ -71,7 +87,7 @@ def cmd_url(args: argparse.Namespace) -> None:
     if not client_file.exists():
         raise SystemExit(
             f"Error: OAuth client file not found at {client_file}\n"
-            "Place your Google OAuth Desktop client JSON at ~/.config/dreamlab/google_client.json"
+            "Place your Google OAuth client JSON at ~/.config/dreamlab/google_client.json"
         )
 
     adc_file = Path(args.credentials).expanduser()
@@ -83,10 +99,11 @@ def cmd_url(args: argparse.Namespace) -> None:
         if s not in scopes:
             scopes.append(s)
 
+    redirect_uri = resolve_redirect_uri(client_file, getattr(args, "redirect_uri", None))
     flow = InstalledAppFlow.from_client_secrets_file(
         str(client_file),
         scopes=scopes,
-        redirect_uri=REDIRECT_URI,
+        redirect_uri=redirect_uri,
     )
     auth_kwargs = {
         "access_type": "offline",
@@ -103,6 +120,7 @@ def cmd_url(args: argparse.Namespace) -> None:
                 "state": state,
                 "code_verifier": flow.code_verifier,
                 "scopes": scopes,
+                "redirect_uri": redirect_uri,
             }
         )
     )
@@ -129,11 +147,12 @@ def cmd_exchange(args: argparse.Namespace) -> None:
     saved = json.loads(STATE_FILE.read_text())
     client_file = Path(saved.get("client_file", str(DEFAULT_CLIENT_FILE))).expanduser()
 
+    redirect_uri = saved.get("redirect_uri", REDIRECT_URI)
     flow = InstalledAppFlow.from_client_secrets_file(
         str(client_file),
         scopes=saved["scopes"],
         state=saved["state"],
-        redirect_uri=REDIRECT_URI,
+        redirect_uri=redirect_uri,
     )
     flow.code_verifier = saved.get("code_verifier")
     flow.fetch_token(authorization_response=args.redirect_url.strip())
@@ -344,12 +363,16 @@ def main() -> None:
         dest="include_granted_scopes",
         help="Disable passing include_granted_scopes=true to Google OAuth",
     )
+    p_url.add_argument(
+        "--redirect-uri",
+        help="Override OAuth redirect URI (defaults to https:// URI in client JSON if present, else http://127.0.0.1:53682/)",
+    )
     p_url.set_defaults(func=cmd_url)
 
     p_ex = sub.add_parser("exchange", help="Exchange redirect URL for credentials")
     p_ex.add_argument(
         "redirect_url",
-        help="Full http://127.0.0.1:53682/?... redirect URL copied from browser",
+        help="Full callback redirect URL copied from browser (e.g. https://dreamlab.ucsb.edu/callback.html?...)",
     )
     p_ex.add_argument(
         "-o",
