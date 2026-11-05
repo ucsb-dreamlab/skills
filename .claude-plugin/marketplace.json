@@ -52,6 +52,15 @@
       "skills": [
         "./skills/google-oauth"
       ]
+    },
+    {
+      "name": "audio-transcription",
+      "description": "Transcribe audio files (including recordings over 15 minutes) with native word-level timestamps and speaker diarization using the DREAM Lab LiteLLM gateway (gemini-3.5-transcribe via google-genai AudioTranscriptionConfig) and ffmpeg overlapping chunks",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/audio-transcription"
+      ]
     }
   ]
 }
